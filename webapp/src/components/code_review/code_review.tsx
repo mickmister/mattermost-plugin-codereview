@@ -5,17 +5,17 @@ import {Client4} from 'mattermost-redux/client';
 import {Theme} from 'mattermost-redux/types/preferences';
 import hlJS from 'highlight.js';
 import {getFileUrl} from "mattermost-redux/utils/file_utils";
-import PropTypes from 'prop-types';
 import { Post, PostList } from 'mattermost-redux/types/posts';
 
 import './code_review.css';
 import CodeComments from 'components/code_comments';
 
-type Props = {
+export type Props = {
     fileInfo: FileInfo;
     post: Post;
     onModalDismissed: () => void;
     theme: Theme;
+    comments: { [key:string]: Post[] }
 };
 
 type State = {
@@ -64,8 +64,6 @@ export default class CodeReview extends React.PureComponent<Props, State> {
         return null
     }
 
-    //commentPanel: React.RefObject<CodeCommentsT>;
-
     constructor(props: Props) {
         super(props);
 
@@ -75,27 +73,20 @@ export default class CodeReview extends React.PureComponent<Props, State> {
             loading: true,
             success: true,
         };
-
-        //this.commentPanel = React.createRef<CodeCommentsT>();
     }
 
     componentDidMount() {
-        this.loadCodeAndComments();
+        this.load();
     }
 
-    loadCodeAndComments = async () => {
+    load = async () => {
         try {
             const fileInfo = this.props.fileInfo;
             const fileUrl = getFileUrl(fileInfo.id);
             if (!this.state.lang || fileInfo.size > CodeReview.MAX_FILE_SIZE) {
                 return;
             }
-
-            const codePromise = fetch(fileUrl);
-            const comments = await Client4.getPostThread(this.props.post.id);
-            this.setState({comments});
-
-            const codeResponse = await codePromise;
+            const codeResponse = await fetch(fileUrl);;
             const code = await codeResponse.text();
             this.handleReceivedCode(code);
         } catch (e) {
@@ -134,13 +125,24 @@ export default class CodeReview extends React.PureComponent<Props, State> {
         }
     }
 
-    renderLineOverlays(code: string) {
-        const numberOfLines = code.split(/\r\n|\n|\r/g).length;
+    getLineContext(n: number): string {
+        if (!this.state.line || !n) {
+            return '';
+        }
+
+        const lines = this.state.code.split(/\r\n|\n|\r/g).slice(this.state.line-n, this.state.line).join('\n');
+        if (lines === '') {
+            return '';
+        }
+        return '\n```' + this.props.fileInfo.extension + '\n' + lines + '\n```\n'
+    }
+
+    renderLineOverlays() {
+        const numberOfLines = this.state.code.split(/\r\n|\n|\r/g).length;
         const lineOverlays = [];
         for (let i = 1; i <= numberOfLines; i++) {
-            const comments = this.getComments(i);
             const classes = [ 'CodeReview-LineOverlay' ];
-            if (comments.length > 0) {
+            if (this.props.comments[i]?.length > 0) {
                 classes.push('CodeReview-LineOverlay-commented');
             }
             lineOverlays.push(<React.Fragment key={i}>
@@ -150,30 +152,13 @@ export default class CodeReview extends React.PureComponent<Props, State> {
                     </div>
                     <button onClick={(e: React.MouseEvent) => {
                             this.setState({line: i});
-                            /*
-                            this.commentPanel.current?.open(
-                                this.props.post.id,
-                                this.props.fileInfo.name,
-                                i);*/
                         }}>
-                        {comments.length > 0 ? <Avatar size="xs" url={imageURLForUser(comments[0].user_id)}/> : '💬'}
+                        {this.props.comments[i]?.length > 0 ? <Avatar size="xs" url={imageURLForUser(this.props.comments[i][0].user_id)}/> : '💬'}
                     </button>
                     <br/>
                 </React.Fragment>);
         }
         return lineOverlays;
-    }
-
-    getComments(line: number) {
-        const commentRegex = new RegExp(`^\\\*\\\*${this.props.fileInfo.name}:${line}:\\\*\\\*`);
-        const comments: Post[] = [];
-        for (let id of this.state.comments!.order) {
-            const comment = (this.state.comments!.posts as unknown as { [id: string]: Post })[id];
-            if (commentRegex.test(comment?.message || "")) {
-                comments.push(comment);
-            }
-        }
-        return comments.sort((a: Post, b: Post) => a.create_at-b.create_at);
     }
 
     render() {
@@ -188,13 +173,18 @@ export default class CodeReview extends React.PureComponent<Props, State> {
 
         return (
                 <div className='CodeReview post-code code-preview'>
-                    <CodeComments thread={this.props.post.id} file={this.props.fileInfo.name} line={this.state.line}></CodeComments>
+                    <CodeComments
+                        channel={this.props.post.channel_id}
+                        thread={this.props.post.id}
+                        file={this.props.fileInfo.name}
+                        line={this.state.line}
+                        getLineContext={(n: number) => this.getLineContext(n)}/>
                     <span className='post-code__language'>
                         {`${fileInfo.name} - ${CodeReview.SupportedFiles[fileInfo.extension].name}`}
                     </span>
                     <div className='hljs'>
                         <div className='post-code__line-numbers'>
-                            {this.renderLineOverlays(this.state.code)}
+                            {this.renderLineOverlays()}
                         </div>
                         <code dangerouslySetInnerHTML={{__html: highlighted}}/>
                     </div>

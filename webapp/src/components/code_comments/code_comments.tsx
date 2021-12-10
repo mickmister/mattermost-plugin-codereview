@@ -1,18 +1,21 @@
 import { Client4 } from 'mattermost-redux/client';
-import { Post, PostList, PostType } from 'mattermost-redux/types/posts';
+import { Post } from 'mattermost-redux/types/posts';
 import React from 'react';
 
 export type Props = {
     currentUserId: string;
+    channel: string;
     thread: string;
     file: string;
     line?: number;
     comments: Post[];
+    getLineContext: (n: number) => string
 };
 
 type State = {
     visible: boolean;
     draftValue: string;
+    contextLines: number;
 };
 
 const Avatar = (window as any).Components.Avatar;
@@ -27,7 +30,8 @@ export default class CodeComments extends React.PureComponent<Props, State> {
 
         this.state = {
             visible: false,
-            draftValue: ""
+            draftValue: "",
+            contextLines: 1
         };
     }
 
@@ -36,12 +40,21 @@ export default class CodeComments extends React.PureComponent<Props, State> {
     }
 
     addComment() {
-        this.props.comments.push({ // TODO: the real thing
-            id:'',create_at:0,update_at:0,edit_at:0,delete_at:0,is_pinned:false,user_id:this.props.currentUserId,channel_id:'',root_id:'',parent_id:'',original_id:'',
-            message:this.state.draftValue,
-            type:'system_channel_deleted',props:{},hashtags:'',pending_post_id:'',reply_count:0,metadata:{embeds:[],emojis:[],files:[],images:{},reactions:[]}
-        });
+        let context = this.props.getLineContext(this.state.contextLines);
+
+        Client4.createPost({
+            channel_id: this.props.channel,
+            message: `**${this.props.file}:${this.props.line}:** ${context}${this.state.draftValue}`,
+            root_id: this.props.thread
+        } as Post);
         this.setDraftValue('');
+    }
+
+    handleContextLinesChange(event: React.ChangeEvent) {
+        let lines = parseInt((event.target as HTMLInputElement).value)
+        if (lines >= 0 && lines <= (this.props.line || 0)) {
+            this.setState({contextLines: lines})
+        }
     }
 
     renderComments() {
@@ -74,9 +87,10 @@ export default class CodeComments extends React.PureComponent<Props, State> {
                     {this.renderComments()}
                     <div className="CodeReview-Comments-create">
                         <Textbox
+                            id="CodeReview-Comments-create-textbox"
                             value={this.state.draftValue}
-                            emojiEnabled={true}
-                            supportsCommands={true}
+                            emojiEnabled={false}
+                            supportsCommands={false}
                             useChannelMentions={true}
                             onChange={(e: React.ChangeEvent) => {this.setDraftValue((e.target as any).value)}}
                             characterLimit={1000}
@@ -89,6 +103,16 @@ export default class CodeComments extends React.PureComponent<Props, State> {
                             className="btn btn-primary comment-btn"
                             value="Add Comment"
                             onClick={(e: React.MouseEvent) => this.addComment()}/>
+                        <div
+                            style={{float: 'right', fontSize: 'small', textAlign: 'right'}}>
+                            Lines of context:
+                            <input
+                                type="number"
+                                value={this.state.contextLines}
+                                onChange={(e: React.ChangeEvent) => this.handleContextLinesChange(e)}
+                                className="form-control"
+                                style={{width: '4em', display: 'inline-block', margin: '6px'}}/>
+                        </div>
                     </div>
                 </div>
             </div>
