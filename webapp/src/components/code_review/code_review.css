@@ -1,0 +1,157 @@
+:root {
+    --CodeReview-Comments-width: 350px;
+}
+
+.CodeReview .post-code__line-numbers {
+    z-index: 1;
+    text-align: right;
+    padding-right: .7em !important;
+    height: min-content;
+}
+
+.CodeReview-LineOverlay {
+    position: absolute;
+    display: block;
+    width: 100%;
+    height: 1.4em;
+    margin-top: -1.4em;
+    left: 0px;
+    z-index: 1;
+}
+
+.CodeReview-LineOverlay-focused {
+    visibility: hidden;
+}
+
+.CodeReview-LineOverlay + button {
+    position: absolute;
+    display: none;
+    visibility: visible;
+    appearance: none;
+    border: none;
+    background: transparent;
+    margin-left: -.35em;
+}
+
+.CodeReview-LineOverlay-focused + button,
+.CodeReview-LineOverlay-commented + button {
+    display: inline-block;
+}
+
+.CodeReview-Comments {
+    position: absolute;
+    right: 0;
+    width: var(--CodeReview-Comments-width);
+    height: 100%;
+    background: #ffffff;
+    border-left: 1px solid #ccc;
+    z-index: 2;
+
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex: 1 1 auto;
+    flex: 1 1 auto;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+    height: 100%;
+    background: var(--center-channel-bg);
+}
+
+.CodeReview-Comments ~ .post-code__language,
+.CodeReview-Comments ~ .hljs {
+    margin-right: var(--CodeReview-Comments-width) !important;
+}
+
+@media screen and (min-width: 768px) {
+    .CodeReview > .post-code__language,
+    .CodeReview > .hljs {
+        margin-right: var(--CodeReview-Comments-width) !important;
+    }
+}
+
+.CodeReview-Comments-header {
+    -webkit-flex: 0 0 56px;
+    flex: 0 0 56px;
+    display: flex;
+    overflow: hidden;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px 0 0;
+    border-bottom: 1px solid rgba(var(--center-channel-color-rgb), 0.08);
+    background: rgba(var(--center-channel-color-rgb), 0.04);
+    color: inherit;
+    white-space: nowrap;
+}
+
+.CodeReview-Comments-header > span {
+    display: flex;
+    height: 2.4rem;
+    flex: 1 1 auto;
+    padding: 0 1.6rem;
+    font-family: Metropolis, sans-serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    overflow: hidden;
+}
+
+.CodeReview-Comments-header > span > div {
+    overflow: hidden;
+    height: 2.4rem;
+    padding: 0 8px;
+    border-left: 1px solid rgba(var(--center-channel-color-rgb), 0.16);
+    margin: 0 0 0 8px;
+    color: rgba(var(--center-channel-color-rgb), 0.56);
+    font-family: "Open Sans", sans-serif;
+    font-size: 12px;
+    font-weight: normal;
+    line-height: 2.4rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.CodeReview-Comments-body {
+    flex: 1;
+    display: -webkit-flex;
+    display: flex;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+
+}
+.CodeReview-Comments-body {
+    text-align: left !important;
+    overflow-y: auto;
+}
+
+.CodeReview-Comments-comment {
+    padding: 0.5em 15px 0;
+}
+
+.CodeReview-Comments-comment > .Avatar {
+    float: left;
+}
+
+.CodeReview-Comments-comment > div {
+    margin-left: 2.1em;
+}
+
+.CodeReview-Comments-body code {
+    min-height: auto !important;
+}
+
+.CodeReview-Comments-body .post-code__language {
+    opacity: 0 !important;
+}
+
+.CodeReview-Comments-body .hljs {
+    padding: 0;
+    width: 100%;
+}
+
+.CodeReview-Comments-create {
+    padding: 0.5em 15px 0;
+}
+
+.CodeReview-Comments-create .btn {
+    float: right;
+    margin-top: 6px;
+}
